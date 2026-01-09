@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app import db
 from app.models import Task
+from app.routes.helpers import login_required, get_current_user
 
 # Create blueprint for task routes
 tasks_bp = Blueprint('tasks', __name__)
@@ -12,7 +13,11 @@ VALID_PRIORITIES = ['low', 'medium', 'high']
 
 # POST /api/tasks - Create new task
 @tasks_bp.route('/api/tasks', methods=['POST'])
+@login_required
 def create_task():
+    # Get current logged-in user
+    current_user = get_current_user()
+    
     # Get JSON data from request
     data = request.get_json()
     
@@ -34,13 +39,13 @@ def create_task():
             "message": f"Priority must be one of: {', '.join(VALID_PRIORITIES)}"
         }), 400
     
-    # Create new task (user_id=1 for now, we will add auth later)
+    # Create new task for the current user
     task = Task(
         title=data.get('title'),
         description=data.get('description'),
         status=data.get('status', 'pending'),
         priority=data.get('priority', 'medium'),
-        user_id=1  # Temporary: hardcoded user, will fix with authentication
+        user_id=current_user.id  # Assign to logged-in user
     )
     
     # Save to database
@@ -50,11 +55,15 @@ def create_task():
     return jsonify(task.to_dict()), 201
 
 
-# GET /api/tasks - Get all tasks
+# GET /api/tasks - Get all tasks for current user
 @tasks_bp.route('/api/tasks', methods=['GET'])
+@login_required
 def get_tasks():
-    # Get all tasks from database
-    tasks = Task.query.all()
+    # Get current logged-in user
+    current_user = get_current_user()
+    
+    # Get only tasks belonging to current user
+    tasks = Task.query.filter_by(user_id=current_user.id).all()
     
     # Convert to list of dictionaries
     return jsonify([task.to_dict() for task in tasks]), 200
@@ -62,26 +71,42 @@ def get_tasks():
 
 # GET /api/tasks/<id> - Get single task
 @tasks_bp.route('/api/tasks/<int:task_id>', methods=['GET'])
+@login_required
 def get_task(task_id):
+    # Get current logged-in user
+    current_user = get_current_user()
+    
     # Find task by ID
     task = Task.query.get(task_id)
     
     # Check if task exists
     if not task:
         return jsonify({"error": "Not Found", "message": f"Task with id {task_id} not found"}), 404
+    
+    # Check if task belongs to current user
+    if task.user_id != current_user.id:
+        return jsonify({"error": "Forbidden", "message": "You don't have permission to access this task"}), 403
     
     return jsonify(task.to_dict()), 200
 
 
 # PUT /api/tasks/<id> - Update task
 @tasks_bp.route('/api/tasks/<int:task_id>', methods=['PUT'])
+@login_required
 def update_task(task_id):
+    # Get current logged-in user
+    current_user = get_current_user()
+    
     # Find task by ID
     task = Task.query.get(task_id)
     
     # Check if task exists
     if not task:
         return jsonify({"error": "Not Found", "message": f"Task with id {task_id} not found"}), 404
+    
+    # Check if task belongs to current user
+    if task.user_id != current_user.id:
+        return jsonify({"error": "Forbidden", "message": "You don't have permission to modify this task"}), 403
     
     # Get JSON data from request
     data = request.get_json()
@@ -123,13 +148,21 @@ def update_task(task_id):
 
 # DELETE /api/tasks/<id> - Delete task
 @tasks_bp.route('/api/tasks/<int:task_id>', methods=['DELETE'])
+@login_required
 def delete_task(task_id):
+    # Get current logged-in user
+    current_user = get_current_user()
+    
     # Find task by ID
     task = Task.query.get(task_id)
     
     # Check if task exists
     if not task:
         return jsonify({"error": "Not Found", "message": f"Task with id {task_id} not found"}), 404
+    
+    # Check if task belongs to current user
+    if task.user_id != current_user.id:
+        return jsonify({"error": "Forbidden", "message": "You don't have permission to delete this task"}), 403
     
     # Delete from database
     db.session.delete(task)

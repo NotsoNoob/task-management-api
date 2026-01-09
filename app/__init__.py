@@ -14,7 +14,7 @@ def create_app():
     
     # Initialize extensions with app
     db.init_app(app)
-    CORS(app)
+    CORS(app, supports_credentials=True)  # Allow credentials for sessions
     
     # Simple test route to verify app is working
     @app.route('/')
@@ -54,7 +54,7 @@ def create_app():
     
     @app.errorhandler(500)
     def internal_error(error):
-        db.session.rollback()  # Rollback any failed database transactions
+        db.session.rollback()
         return jsonify({
             "error": "Internal Server Error",
             "message": "An unexpected error occurred on the server"
@@ -64,7 +64,9 @@ def create_app():
     
     # Import and register blueprints
     from app.routes.tasks import tasks_bp
+    from app.routes.auth import auth_bp
     app.register_blueprint(tasks_bp)
+    app.register_blueprint(auth_bp)
     
     # Import models and create database tables
     with app.app_context():
