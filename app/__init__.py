@@ -29,8 +29,10 @@ def create_app():
     def health():
         return jsonify({"status": "healthy"})
     
-    # Create database tables
+    # Import models and create database tables
     with app.app_context():
-        db.create_all()
+        from app import models  # Import models so tables are registered
+        db.create_all()         # Create all tables in database
+        print("Database tables created successfully!")
     
     return app
