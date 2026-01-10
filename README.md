@@ -292,25 +292,3 @@ A Postman collection is included in the `docs/` folder. To use it:
 2. Click "Import"
 3. Select `docs/postman_collection.json`
 4. All endpoints will be available in the collection
-
-## Author
-
-Your Name
-
-## License
-
-This project is open source and available under the MIT License.
-```
-
----
-
-### Step 3: Update the README with your GitHub username
-
-Find this line:
-```
-git clone https://github.com/YOUR-USERNAME/task-management-api.git
-```
-
-Change `YOUR-USERNAME` to `NotsoNoob`:
-```
-git clone https://github.com/NotsoNoob/task-management-api.git
