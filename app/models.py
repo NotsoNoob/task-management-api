@@ -1,9 +1,25 @@
+"""
+Database models for Task Management API.
+Defines User and Task entities with their relationships.
+"""
+
 from app import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 
+
 class User(db.Model):
-    # Table name (optional - Flask-SQLAlchemy auto-generates from class name)
+    """
+    User model for authentication.
+    
+    Attributes:
+        id: Unique identifier
+        username: Display name (unique)
+        email: Email address (unique)
+        password_hash: Hashed password
+        created_at: Account creation timestamp
+        tasks: Relationship to user's tasks
+    """
     __tablename__ = 'users'
     
     # Columns
@@ -17,15 +33,15 @@ class User(db.Model):
     tasks = db.relationship('Task', backref='owner', lazy=True)
     
     def set_password(self, password):
-        """Hash and store the password"""
+        """Hash and store the password securely."""
         self.password_hash = generate_password_hash(password)
     
     def check_password(self, password):
-        """Verify password against stored hash"""
+        """Verify a password against the stored hash."""
         return check_password_hash(self.password_hash, password)
     
     def to_dict(self):
-        """Convert User object to dictionary for JSON response"""
+        """Convert User object to dictionary for JSON serialization."""
         return {
             "id": self.id,
             "username": self.username,
@@ -34,10 +50,25 @@ class User(db.Model):
         }
     
     def __repr__(self):
-        """String representation for debugging"""
+        """String representation for debugging."""
         return f'<User {self.username}>'
+
+
 class Task(db.Model):
-    # Table name
+    """
+    Task model for to-do items.
+    
+    Attributes:
+        id: Unique identifier
+        title: Task title (required)
+        description: Detailed description
+        status: Current status (pending/in_progress/completed)
+        priority: Priority level (low/medium/high)
+        due_date: Optional deadline
+        created_at: Creation timestamp
+        updated_at: Last modification timestamp
+        user_id: Owner's user ID (foreign key)
+    """
     __tablename__ = 'tasks'
     
     # Columns
@@ -54,7 +85,7 @@ class Task(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     
     def to_dict(self):
-        """Convert Task object to dictionary for JSON response"""
+        """Convert Task object to dictionary for JSON serialization."""
         return {
             "id": self.id,
             "title": self.title,
@@ -68,5 +99,5 @@ class Task(db.Model):
         }
     
     def __repr__(self):
-        """String representation for debugging"""
+        """String representation for debugging."""
         return f'<Task {self.title}>'

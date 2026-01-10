@@ -6,6 +6,10 @@ from flask_cors import CORS
 db = SQLAlchemy()
 
 def create_app():
+    """
+    Application factory function.
+    Creates and configures the Flask application.
+    """
     # Create Flask application instance
     app = Flask(__name__)
     
@@ -14,25 +18,29 @@ def create_app():
     
     # Initialize extensions with app
     db.init_app(app)
-    CORS(app, supports_credentials=True)  # Allow credentials for sessions
+    CORS(app, supports_credentials=True)
     
-    # Simple test route to verify app is working
+    # ========== Base Routes ==========
+    
     @app.route('/')
     def home():
+        """Welcome endpoint"""
         return jsonify({
             "message": "Welcome to Task Management API",
-            "status": "running"
+            "status": "running",
+            "version": "1.0.0"
         })
     
-    # Health check route
     @app.route('/health')
     def health():
+        """Health check endpoint"""
         return jsonify({"status": "healthy"})
     
-    # ========== Global Error Handlers ==========
+    # ========== Error Handlers ==========
     
     @app.errorhandler(400)
     def bad_request(error):
+        """Handle 400 Bad Request errors"""
         return jsonify({
             "error": "Bad Request",
             "message": "The request was invalid or cannot be processed"
@@ -40,6 +48,7 @@ def create_app():
     
     @app.errorhandler(404)
     def not_found(error):
+        """Handle 404 Not Found errors"""
         return jsonify({
             "error": "Not Found",
             "message": "The requested resource was not found"
@@ -47,6 +56,7 @@ def create_app():
     
     @app.errorhandler(405)
     def method_not_allowed(error):
+        """Handle 405 Method Not Allowed errors"""
         return jsonify({
             "error": "Method Not Allowed",
             "message": "The HTTP method is not allowed for this endpoint"
@@ -54,21 +64,22 @@ def create_app():
     
     @app.errorhandler(500)
     def internal_error(error):
+        """Handle 500 Internal Server errors"""
         db.session.rollback()
         return jsonify({
             "error": "Internal Server Error",
             "message": "An unexpected error occurred on the server"
         }), 500
     
-    # ========== End Error Handlers ==========
+    # ========== Register Blueprints ==========
     
-    # Import and register blueprints
     from app.routes.tasks import tasks_bp
     from app.routes.auth import auth_bp
     app.register_blueprint(tasks_bp)
     app.register_blueprint(auth_bp)
     
-    # Import models and create database tables
+    # ========== Initialize Database ==========
+    
     with app.app_context():
         from app import models
         db.create_all()
